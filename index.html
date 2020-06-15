@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title></title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background-color: #eee;
+      }
+      #main {
+        margin: 0 auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="main"></main>
+    <script type="text/javascript" src="https://s.thsi.cn/js/common/d3/d3.v5.min.js"></script>
+    <script src="./dist/index.js"></script>
+    <script type="text/javascript">
+      const originData = {
+        edges: [
+          { from: 'nw_hq_shl2_215_69;cnfutures;1', to: 'bjwfj_hq_fu_14_206;cnfutures;1' },
+          { from: 'nw_hq_shl2_215_69;cnfutures;1', to: 'njdx_hq_fu_12_182;cnfutures;1' },
+          { from: 'nw_hq_shl2_215_69;cnfutures;1', to: 'sqyd_hq_fu_2_153;cnfutures;1' },
+          { from: 'nw_hq_hq_216_22;cnfutures;1', to: 'nw_hq_shl2_215_69;cnfutures;1' },
+          { from: 'sqyd_hq_fu_2_153;cnfutures;1', to: '103.141.10.7;cnfutures;1' },
+          { from: 'nw_hq_shsz_210_132;cnfutures;1', to: 'gateway0.11:101.71.41.228;cnfutures;1' },
+          { from: 'nw_hq_shsz_210_132;cnfutures;1', to: 'hwy_qihuo_220_95;cnfutures;1' },
+          { from: 'nw_hq_shsz_210_132;cnfutures;1', to: 'hwy_hq_fu_2_249;cnfutures;1' },
+          { from: 'nw_hq_shsz_210_132;cnfutures;1', to: 'njdx_hq_fu_12_186;cnfutures;1' },
+          { from: 'nw_hq_shsz_210_132;cnfutures;1', to: 'hwy_qihuo_147_114;cnfutures;1' },
+        ],
+        nodes: [
+          {
+            childs: true,
+            id: 'nw_hq_shl2_215_69;cnfutures;1',
+            lebal: 'nw_hq_shl2_215_69\n(10)',
+            tooltip:
+              "\u4e3b\u673a\u540d:nw_hq_shl2_215_69\r\n\u5185\u7f51\u5730\u5740:['192.168.215.69']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:[]\r\n\u8fde\u63a5\u4e3b\u7ad9\u4e2a\u6570\uff1a10\r\n",
+          },
+          {
+            childs: true,
+            id: 'bjwfj_hq_fu_14_206;cnfutures;1',
+            lebal: 'bjwfj_hq_fu_14_206\n(1)',
+            tooltip:
+              "\u4e3b\u673a\u540d:bjwfj_hq_fu_14_206\r\n\u5185\u7f51\u5730\u5740:['192.168.14.206']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:['106.38.254.78']\r\n\u8fde\u63a5\u4e3b\u7ad9\u4e2a\u6570\uff1a1\r\n",
+          },
+          {
+            childs: true,
+            id: 'njdx_hq_fu_12_182;cnfutures;1',
+            lebal: 'njdx_hq_fu_12_182\n(1)',
+            tooltip:
+              "\u4e3b\u673a\u540d:njdx_hq_fu_12_182\r\n\u5185\u7f51\u5730\u5740:['192.168.12.182']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:['61.147.165.182']\r\n\u8fde\u63a5\u4e3b\u7ad9\u4e2a\u6570\uff1a1\r\n",
+          },
+          {
+            childs: true,
+            id: 'sqyd_hq_fu_2_153;cnfutures;1',
+            lebal: 'sqyd_hq_fu_2_153\n(19)',
+            tooltip:
+              "\u4e3b\u673a\u540d:sqyd_hq_fu_2_153\r\n\u5185\u7f51\u5730\u5740:['10.20.2.153']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:['183.131.2.153']\r\n\u8fde\u63a5\u4e3b\u7ad9\u4e2a\u6570\uff1a19\r\n",
+          },
+          {
+            childs: false,
+            id: 'nw_hq_hq_216_22;cnfutures;1',
+            lebal: 'nw_hq_hq_216_22',
+            tooltip:
+              "\u4e3b\u673a\u540d:nw_hq_hq_216_22\r\n\u5185\u7f51\u5730\u5740:['192.168.216.22']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:[]\r\n",
+          },
+          { childs: false, id: '103.141.10.7;cnfutures;1', lebal: '103.141.10.7', tooltip: '' },
+          {
+            childs: true,
+            id: 'nw_hq_shsz_210_132;cnfutures;1',
+            lebal: 'nw_hq_shsz_210_132\n(1)',
+            tooltip:
+              "\u4e3b\u673a\u540d:nw_hq_shsz_210_132\r\n\u5185\u7f51\u5730\u5740:['192.168.210.132']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:[]\r\n\u8fde\u63a5\u4e3b\u7ad9\u4e2a\u6570\uff1a1\r\n",
+          },
+          {
+            childs: false,
+            id: 'gateway0.11:101.71.41.228;cnfutures;1',
+            lebal: 'gateway:101.71.41.228',
+            tooltip:
+              "\u4e3b\u673a\u540d:gateway0.11\r\n\u5185\u7f51\u5730\u5740:['172.24.1.25', '192.168.0.1', '192.168.0.11', '10.200.0.1', '10.204.0.1', '10.10.0.1']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:['112.17.10.130', '183.131.2.245', '101.71.41.245', '112.17.10.129', '101.71.41.202', '101.71.41.203', '112.17.10.131', '112.17.10.132', '101.71.41.204', '101.71.41.191', '112.17.10.133', '112.17.10.134', '112.17.10.135', '112.17.10.136', '112.17.10.137', '112.17.10.138', '112.17.10.139', '112.17.10.140', '112.17.10.141', '112.17.10.142', '112.17.10.143', '112.17.10.144', '112.17.10.145', '112.17.10.146', '112.17.10.147', '112.17.10.148', '112.17.10.149', '112.17.10.150', '112.17.10.151', '112.17.10.152', '112.17.10.153', '112.17.10.154', '112.17.10.155', '112.17.10.156', '112.17.10.157', '112.17.10.158', '112.17.10.159', '112.17.10.160', '183.131.2.175', '183.131.2.176', '183.131.2.177', '183.131.2.178', '183.131.2.179', '183.131.2.180', '183.131.2.181', '183.131.2.182', '183.131.2.183', '183.131.2.184', '183.131.2.185', '183.131.2.186', '183.131.2.187', '183.131.2.188', '183.131.2.189', '183.131.2.190', '183.131.2.191', '183.131.2.192', '183.131.2.193', '183.131.2.194', '183.131.2.195', '183.131.2.196', '183.131.2.197', '183.131.2.198', '183.131.2.199', '183.131.2.200', '183.131.2.201', '183.131.2.202', '183.131.2.203', '183.131.2.204', '183.131.2.205', '183.131.2.206', '101.71.41.205', '101.71.41.206', '101.71.41.207', '101.71.41.208', '101.71.41.209', '101.71.41.210', '101.71.41.211', '101.71.41.212', '101.71.41.213', '101.71.41.214', '101.71.41.215', '101.71.41.216', '101.71.41.217', '101.71.41.218', '101.71.41.219', '101.71.41.220', '101.71.41.221', '101.71.41.222', '101.71.41.223', '101.71.41.224', '101.71.41.225', '101.71.41.226', '101.71.41.227', '101.71.41.228', '101.71.41.229', '101.71.41.230', '101.71.41.231', '101.71.41.232', '101.71.41.233', '183.129.205.194', '183.129.205.195', '183.129.205.196', '183.129.205.197', '183.129.205.198', '183.129.205.199', '183.129.205.200', '183.129.205.201', '183.129.205.202', '183.129.205.203', '183.129.205.204', '183.129.205.205', '183.129.205.206', '183.129.205.207', '183.129.205.208', '183.129.205.209', '183.129.205.210', '183.129.205.211', '183.129.205.212', '183.129.205.213', '183.129.205.214', '183.129.205.215', '183.129.205.216', '183.129.205.217', '183.129.205.218', '183.129.205.219', '183.129.205.220', '183.129.205.221', '183.129.205.222', '183.129.205.223', '183.129.205.224', '183.129.205.225', '183.129.205.226', '183.129.205.227', '183.129.205.228', '183.129.205.229', '183.129.205.230', '183.129.205.231', '183.129.205.232', '183.129.205.233', '183.129.205.234', '183.129.205.235', '183.129.205.236', '183.129.205.237', '183.129.205.238', '183.129.205.239', '183.129.205.240', '183.129.205.241', '183.129.205.242', '183.129.205.243', '183.129.205.244', '183.129.205.245', '183.129.205.246', '183.129.205.247', '183.129.205.248', '183.129.205.249', '183.129.205.250', '183.129.205.251', '183.129.205.252', '183.129.205.253', '183.129.205.254', '124.160.26.66', '124.160.26.67', '124.160.26.68', '124.160.26.69', '124.160.26.70', '124.160.26.71', '124.160.26.72', '124.160.26.73', '124.160.26.74', '124.160.26.75', '124.160.26.76', '124.160.26.77', '124.160.26.78', '124.160.26.79', '124.160.26.80', '124.160.26.81', '124.160.26.82', '124.160.26.83', '124.160.26.84', '124.160.26.85', '124.160.26.86', '124.160.26.87', '124.160.26.88', '124.160.26.89', '124.160.26.90', '124.160.26.91', '124.160.26.92', '124.160.26.93', '124.160.26.94', '117.148.176.162', '117.148.176.163', '117.148.176.164', '117.148.176.165', '117.148.176.166', '117.148.176.167', '117.148.176.168', '117.148.176.169', '117.148.176.170', '117.148.176.171', '117.148.176.172', '117.148.176.173', '117.148.176.174', '117.148.176.175', '117.148.176.176', '117.148.176.177', '117.148.176.178', '117.148.176.179', '117.148.176.180', '117.148.176.181', '117.148.176.182', '117.148.176.183', '117.148.176.184', '117.148.176.185', '117.148.176.186', '117.148.176.187', '117.148.176.188', '117.148.176.189', '117.148.176.190', '183.131.2.142', '101.71.41.251', '101.71.41.253']\r\n",
+          },
+          {
+            childs: false,
+            id: 'hwy_qihuo_220_95;cnfutures;1',
+            lebal: 'hwy_qihuo_220_95',
+            tooltip:
+              "\u4e3b\u673a\u540d:hwy_qihuo_220_95\r\n\u5185\u7f51\u5730\u5740:['192.168.82.180']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:['114.115.220.95']\r\n",
+          },
+          {
+            childs: true,
+            id: 'hwy_hq_fu_2_249;cnfutures;1',
+            lebal: 'hwy_hq_fu_2_249\n(13)',
+            tooltip:
+              "\u4e3b\u673a\u540d:hwy_hq_fu_2_249\r\n\u5185\u7f51\u5730\u5740:['192.168.81.244']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:['119.3.2.249']\r\n\u8fde\u63a5\u4e3b\u7ad9\u4e2a\u6570\uff1a13\r\n",
+          },
+          {
+            childs: true,
+            id: 'njdx_hq_fu_12_186;cnfutures;1',
+            lebal: 'njdx_hq_fu_12_186\n(1)',
+            tooltip:
+              "\u4e3b\u673a\u540d:njdx_hq_fu_12_186\r\n\u5185\u7f51\u5730\u5740:['192.168.12.186']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:['61.147.165.186']\r\n\u8fde\u63a5\u4e3b\u7ad9\u4e2a\u6570\uff1a1\r\n",
+          },
+          {
+            childs: false,
+            id: 'hwy_qihuo_147_114;cnfutures;1',
+            lebal: 'hwy_qihuo_147_114',
+            tooltip:
+              "\u4e3b\u673a\u540d:hwy_qihuo_147_114\r\n\u5185\u7f51\u5730\u5740:['192.168.81.159']\r\n\u5916\u7f51\u5730\u5740:[]\r\n\u516c\u7f51\u5730\u5740:['119.3.147.114']\r\n",
+          },
+        ],
+      }
+      let edges = originData.edges.map((value) => {
+        value = {
+          source: value.from,
+          target: value.to,
+        }
+        return value
+      })
+
+      let nodes = originData.nodes.map((value) => {
+        value.label = value.lebal
+        delete value.lebal
+        return value
+      })
+
+      let data = { edges: edges, nodes: nodes }
+
+      const option = {
+        layout: 'dagre',
+        showRelation:true,
+        animation: {
+          enable: true,
+          duration: 5000,
+          ease: 'linear',
+          delay: 1000,
+        },
+        nodes: {
+          width: 200,
+          height: 60,
+          label: {
+            // 节点文本字体大小
+            fontSize: 14,
+            // 节点文本颜色
+            color: '#fff',
+            //文本位置
+            position: 'center'
+          },
+          borderRadius: [5, 5, 5, 5],
+          shadowBlur: 12,
+          shadowColor: 'rgba(0, 0, 0, 0.1)',
+          shadowOffsetX: 0,
+          shadowOffsetY: 2,
+          fill: '#54a0ff',
+          // 节点背景图片
+          backgroundImage: '',
+          //对应的不同状态的样式
+          state: {
+            //鼠标悬浮对应样式
+            hover: {
+              backgroundColor: '#ff9f43',
+              border: '1 solid gray',
+            },
+            //点击对应样式
+            click: { lineWidth: '', color: '', custom: function () {} },
+          },
+          custom: function (context, value, helper) {
+            let id = value.id
+            let badge = /\s\((.*)\)/gi.exec(value.label)
+            let {zrender, g} = helper
+            let sinkNodes = g.sinks()
+
+            badge = badge && badge[1]
+
+
+            if (badge) {
+              context.add(
+                new zrender.Circle({
+                  shape: {
+                    cx: value.x + value.width,
+                    cy: value.y,
+                    r: 10,
+                  },
+                  style: {
+                    text: badge,
+                    fontSize: 12,
+                    textAlign: 'center',
+                    textVerticalAlign: 'middle',
+                    textOffset: [0, 1],
+                    fill: '#f0932b',
+                    textFill: '#fff',
+                    transformText: true,
+                  },
+                  z: 11,
+                })
+              )
+            }
+
+            if (sinkNodes.includes(id)) {
+              return {
+                style: {
+                  fill: '#7bb6ff'
+                }
+              }
+            }
+
+            if (id === 'nw_hq_shl2_215_69;cnfutures;1') {
+
+              context.add(
+                new zrender.Image({
+                  style: {
+                    image: '../assets/pic2.png',
+                    x: value.x + 10,
+                    y: value.y + value.height / 2 - 15,
+                    height: 30,
+                    width: 30,
+                  },
+                  z: 10,
+                })
+              )
+              return {
+                style: {
+                  fill: 'red',
+                  textAlign: 'left',
+                  textOffset: [-50, 0],
+                },
+              }
+            } else if (id === 'sqyd_hq_fu_2_153;cnfutures;1') {
+
+
+              context.add(
+                new zrender.Image({
+                  style: {
+                    image: '../assets/pic1.png',
+                    x: value.x + 10,
+                    y: value.y + value.height / 2 - 15,
+                    height: 30,
+                    width: 30,
+                  },
+                  z: 10,
+                })
+              )
+            }
+          },
+        },
+        edges: {
+          //边的样式
+          shape: 'line', //polyline arc quadratic...
+          stroke: '#54a0ff',
+          label: {
+            // 节点文本字体大小
+            fontSize: 16,
+            // 节点文本颜色
+            color: '#000',
+            //文本的位置：
+            position: 'center', //left right top bottom
+          },
+          lineWidth: 2,
+          custom: function (svg) {},
+          //对应的不同状态的样式
+          state: {
+            //鼠标悬浮对应样式
+            hover: {
+              backgroundColor: '',
+              border: '',
+            },
+            //点击对应样式
+            click: { lineWidth: '', color: '', custom: function () {} },
+          },
+          //箭头类型
+          arrow: false,
+          arrowSize: 1,
+          arrowColor: '#54a0ff',
+          lineDash: true, //线段长和间距
+        },
+        tooltip: {
+          // 是否开启提示框
+          enable: true,
+          // 提示框内容格式化函数
+          formatter: function () {},
+          // 提示框定位偏移量
+          offset: [10, 20],
+          // 触发提示框方式
+          triggerOn: 'mousemove',
+          // 提示框的样式配置
+          style: {},
+        },
+      }
+      let flow = new HXTopology('main', data, option)
+      flow.draw()
+    </script>
+  </body>
+</html>
