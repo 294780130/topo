@@ -1,6 +1,6 @@
 {
-  "name": "NetworkVis",
-  "version": "1.0.0",
+  "name": "hx-topology",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
   "dependencies": {
@@ -21,8 +21,8 @@
     "webpack-dev-server": "^3.2.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "prod": "npm run webpack-babel",
+    "release": "npm run webpack-babel && cd node-thsi && node app.js",
     "dev": "webpack-dev-server --config webpack.config.dev.js --progress --colors",
     "webpack-babel": "webpack --config webpack.config.babel.js --progress --colors"
   },

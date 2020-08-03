@@ -10,13 +10,18 @@
         padding: 0;
       }
       #main {
-        width: 800px;
-        height: 400px;
+        width: 100vw;
+        height: 50vh;
+      }
+      #main2 {
+        width: 100vw;
+        height: 50vh;
       }
     </style>
   </head>
   <body>
     <main id="main"></main>
+    <div id="main2"></div>
     <script src="./dist/HXTopology.js"></script>
     <!-- <script src="https://s.thsi.cn/js/datav/HXTopology/1.0.0/HXTopology.js"></script> -->
     <script src="//s.thsi.cn/cb?js/jquery-1.9.1.min.js"></script>
@@ -213,6 +218,7 @@
         ]
       }
       let flow = new HXTopology('main', data, option)
+      let flow2 = new HXTopology('main2', $.extend(true, {}, data), $.extend(true, {}, option))
       
       flow.addEventListener('nodeClick', (id, d)=>{
         flow.clearHover();

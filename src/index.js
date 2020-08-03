@@ -1,136 +1,341 @@
-import setDagre from './setDagre'
-import GetCrossPoint from './getCrossPoint'
-import defaultOption from './defaultOption'
-import FlowApi from './Flow'
-import roamable from './roamable'
-import util from './util/util'
- 
-class Flow {
+import zrender from 'zrender'
+import roam from './util/roam'
+import { layout } from './layout/index'
+
+class HXTopology {
   constructor(dom, data, option) {
+    var defaultOption = {
+      layout: 'static', // static  function  '已经写好的'
+      tooltip: {
+        style: {
+          position: 'absolute',
+          maxWidth: '200px',
+          padding: '8px 8px',
+          background: 'rgba(51,51,51,.8)',
+          color: '#fff',
+          borderRadius: '6px',
+          boxShadow: '0 2px 12px 0 rgba(0, 0, 0, 0.1)',
+          display: 'none',
+        },
+        formatter: function (d) {
+          return `名称：${d.label}`
+        },
+        offset: [10, 10],
+        // tooltip是否在容器内部
+        inside: true,
+      },
+      nodes: {
+        style: {
+          fill: '#54A0FF',
+          textFill: '#fff',
+          // 文字是否跟随缩放
+          transformText: true,
+          fontSize: 14,
+        },
+        shape: {
+          // width: 200,
+          // height: 40,
+        },
+      },
+      edges: {
+        style: {
+          stroke: '#54A0FF',
+          // lineDash: [5, 3],
+        },
+        arrow: {
+          distance: function (angle) {
+            return 0
+          },
+          style: {
+            fill: '#54A0FF',
+          },
+          size: 16,
+          angle: Math.PI / 12,
+        },
+      },
+      custom: null,
+    }
+    this.eventCallback = {
+      nodeClick: null,
+      doubleClick: null,
+      blur: null,
+    }
+    this.nodes = data.nodes
+    this.edges = data.edges
+    this.Z_line = 100000
+    this.Z_arrow = 200000
+    this.Z_shape = 300000
+    this.atomLineWidth = 1
+    this.dom = dom
+    this.doubleClick = false
+    this.dragLog = []
+    // 1.合并配置项
     this.option = zrender.util.merge(option, defaultOption)
-
-    // 计算每个节点和关系的坐标值
-    // TODO:这里不设置this.option么？
-    // TODO:这里写死了dagre布局，后面需要修改，以支持更多的布局方式
-    this.position = setDagre(data, option)        
-
-    this.nodeList = {}
-    this.edgeList = {}
-    this.zr = zrender.init(document.getElementById(dom))
-    this.dagreGroup = new zrender.Group()
-    this.zr.add(this.dagreGroup)
-    this.tooltip = this.createTooltip()
-  }
-
-  createTooltip() {
-    let tooltip = document.createElement('div')
-    tooltip.id = 'tooltip_' + this.zr.getId()
-    let style = tooltip.style
-    style.position = 'absolute'
-    style.maxWidth = '200px'
-    style.padding = '8px 8px'
-    style.background = 'rgba(51,51,51,.8)'
-    style.color = '#fff'
-    style.borderRadius = '6px'
-    style.boxShadow = '0 2px 12px 0 rgba(0, 0, 0, 0.1)'
-    style.display = 'none'
-    document.body.appendChild(tooltip)
-    return tooltip
-  }
-
-  draw() {
-    this.drawLine(this.option)
-    this.drawShape(this.option)
-    let flowApi = new FlowApi(this.zr, this.dagreGroup)
-    window.flowApi = flowApi
-    flowApi.fit()
-    //flowApi.center()
-    roamable(this.zr, this.dagreGroup)
-  }
-
-  redraw(data, option) {
-    this.dagreGroup.removeAll();
-    this.option = zrender.util.merge(option, defaultOption)
-    this.position = setDagre(data, option)
+    // 删除多余的边（起点或者终点不在nodes范围内）
+    this.deleteSurplus()
+    // 2.zrender初始化
+    this.initZr()
+    // 3.初始化tooltip
+    this.initTooltip()
+    // 4.计算位置
+    this.calculate()
+    // 5.绘图
     this.draw()
+    this.bindDrag()
+    // 6.可被拖动和缩放
+    this.zr.domName = dom
+    this.roam = new roam(this.zr, this.group)
   }
 
-  drawShape(option) {
-    let nodePoint = {}
-    //获取中心点
+  deleteSurplus() {
+    var deleteIndex = []
+    this.edges.forEach((edge, i) => {
+      if (!this.nodes[edge.from] || !this.nodes[edge.to] || edge.from == edge.to) {
+        deleteIndex.push(i)
+      }
+    })
+    for (var i = deleteIndex.length - 1; i >= 0; i--) {
+      this.edges.splice(deleteIndex[i], 1)
+    }
+  }
 
-    for (const [key, value] of Object.entries(this.position.nodeInfo)) {
+  // zrender初始化
+  initZr() {
+    this.zr = zrender.init(document.getElementById(this.dom))
+    this.group = new zrender.Group()
+    this.zr.add(this.group)
+    this.container = {
+      width: this.zr.getWidth(),
+      height: this.zr.getHeight(),
+    }
+    this.zr.on('click', (e) => {
+      if (!e.target && typeof this.eventCallback['blur'] == 'function') {
+        this.eventCallback['blur']()
+      }
+    })
+  }
+
+  // 初始化tooltip
+  initTooltip() {
+    var domEle = document.getElementById(this.dom)
+    if (window.getComputedStyle(domEle).position == 'static') {
+      domEle.style.position = 'relative'
+    }
+    this.tooltip = document.createElement('div')
+    this.tooltip.id = 'tooltip_' + this.zr.getId()
+    let tooltipStyle = this.option.tooltip.style
+    for (let key in tooltipStyle) {
+      this.tooltip.style[key] = tooltipStyle[key]
+    }
+    document.getElementById(this.dom).appendChild(this.tooltip)
+  }
+
+  // 定位计算的入口，具体执行的定位类型在此分类
+  calculate() {
+    if (typeof this.option.layout == 'function') {
+      this.nodes = this.option.layout(this.nodes, this.edges, this.container, this.option)
+    } else if (layout[this.option.layout]) {
+      // 参数：所有节点，所有边，容器宽高
+      this.nodes = layout[this.option.layout](this.nodes, this.edges, this.container, this.option)
+    } else {
+      console.error('未找到匹配的布局算法')
+    }
+  }
+
+  // 绘图
+  draw() {
+    this.drawShape()
+    this.drawLine()
+    this.addCustomLayer()
+  }
+
+  drawShape() {
+    for (let key in this.nodes) {
       let nodeGroup = new zrender.Group({})
       nodeGroup.draggable = true
       nodeGroup.name = 'nodeGroup'
-      nodeGroup.value = value
-      let self = this
-      let g = this.position.g
-
-      let custom = this.option.nodes.custom
-      let customStyle = {}
-
-      if (custom) {
-        customStyle = custom(nodeGroup, value, { zrender, g }) || {}
-      }
-      let merge = zrender.util.merge
-      // TODO：这里写死了Rect，需要扩展以支持更多形状
-      this.nodeList[key] = new zrender.Rect(
-        merge(
-          {
-            shape: { x: value.x, y: value.y, width: value.width, height: value.height, r: option.nodes.borderRadius },
-            style: {
-              text: value.label,
-              textOffset: option.nodes.label.textOffset,
-              transformText: true,
-              fill: option.nodes.fill,
-              textFill: option.nodes.label.color,
-              fontSize: option.nodes.label.fontSize,
-              shadowBlur: option.nodes.shadowBlur,
-              shadowColor: option.nodes.shadowColor,
-              shadowOffsetX: option.nodes.shadowOffsetX,
-              shadowOffsetY: option.nodes.shadowOffsetY,
-            },
-            z: 1,
-          },
-          customStyle,
-          true
-        )
-      )
-      //获取每个矩形的原始每个点的坐标
-      let originPoint = util.getCoordinate(this.nodeList[key].shape)
-      nodePoint[key] = originPoint
-
-      nodeGroup.add(this.nodeList[key])
-
-      nodeGroup.on('mouseover', function (e) {
-        if (!this.value.tooltip) {
-          this.trigger('mouseup')
-          return
-        }
-        self.tooltip.innerHTML = this.value.tooltip
-        let style = self.tooltip.style
-        style.top = e.offsetY + 'px'
-        style.left = e.offsetX + 'px'
-        style.display = 'block'
-        style.transition = 'all .2s'
+      var d = this.nodes[key]
+      nodeGroup.value = d
+      nodeGroup.value.id = key
+      var style = zrender.util.merge(d.style || {}, this.option.nodes.style)
+      var shape = zrender.util.merge(d.shape || {}, this.option.nodes.shape)
+      style.text = d.label
+      shape.x = d.x
+      shape.y = d.y
+      shape.cx = d.cx
+      shape.cy = d.cy
+      d.shape = new zrender[d.type || 'Rect']({
+        shape: shape,
+        style: style,
+        z: this.Z_shape++,
       })
-      self.tooltip.onmouseenter = () => {
-        self.tooltip.style.display = 'block'
+      nodeGroup.add(d.shape)
+      if (d.image) {
+        this.drawImage(nodeGroup, d)
       }
-      nodeGroup.on('mouseout', () => (self.tooltip.style.display = 'none'))
+      if (d.custom && d.custom.length > 0) {
+        d.customShape = []
+        d.custom.forEach((cus) => {
+          var defaultShape = {
+            x: (d.cx || d.x || 0) + (cus.offset ? cus.offset[0] : 0),
+            y: (d.cy || d.y || 0) + (cus.offset ? cus.offset[1] : 0),
+            cx: (d.cx || d.x || 0) + (cus.offset ? cus.offset[0] : 0),
+            cy: (d.cy || d.y || 0) + (cus.offset ? cus.offset[1] : 0),
+          }
+          var ele = new zrender[cus.type || 'Rect']({
+            shape: zrender.util.merge(cus.shape, defaultShape),
+            style: cus.style || {},
+            z: 399999,
+          })
+          d.customShape.push(ele)
+          nodeGroup.add(ele)
+        })
+      }
+      d.nodeGroup = nodeGroup
 
-      this.dagreGroup.add(nodeGroup)
-      /*if (g.outEdges(key).length === 0) {
-        this.nodeList[key].attr('style', { fill: '#f8c291' })
-      }*/
+      // 控制tooltip
+      nodeGroup.on('mousemove', (e) => {
+        this.tooltip.innerHTML = d.tooltip || this.option.tooltip.formatter(this.nodes[key])
+        this.tooltip.style.display = 'block'
+        // tooltip不出范围
+        var top = e.offsetY + this.option.tooltip.offset[0]
+        var left = e.offsetX + this.option.tooltip.offset[1]
+        if (this.option.tooltip.inside) {
+          var h = this.tooltip.offsetHeight
+          var w = this.tooltip.offsetWidth
+          if (left + w > this.container.width) {
+            left = this.container.width - w
+          }
+          if (top + h > this.container.height) {
+            top = this.container.height - h
+          }
+          left < 0 ? (left = 0) : 1
+          top < 0 ? (top = 0) : 1
+        }
+
+        this.tooltip.style.top = top + 'px'
+        this.tooltip.style.left = left + 'px'
+      })
+      nodeGroup.on('mouseout', () => {
+        this.tooltip.style.display = 'none'
+      })
+
+      nodeGroup.on('click', (e) => {
+        if (this.doubleClick) {
+          this.doubleClick = false
+          if (typeof this.eventCallback.doubleClick == 'function') {
+            this.eventCallback.doubleClick(key, this.nodes[key])
+          }
+        } else {
+          this.doubleClick = true
+        }
+        setTimeout(
+          () => {
+            if (this.doubleClick) {
+              if (typeof this.eventCallback.nodeClick == 'function') {
+                this.eventCallback.nodeClick(key, this.nodes[key])
+              }
+              this.doubleClick = false
+            }
+          },
+          typeof this.eventCallback.doubleClick == 'function' ? 300 : 0
+        )
+      })
+      this.group.add(nodeGroup)
     }
-    let self = this
+  }
 
+  drawImage(nodeGroup, d) {
+    d.img = new zrender.Image({
+      style: {
+        image: d.image.url,
+        x: (d.cx || d.x || 0) + d.image.offset[0],
+        y: (d.cy || d.y || 0) + d.image.offset[1],
+        height: d.image.height,
+        width: d.image.width,
+      },
+      z: 399999,
+    })
+    nodeGroup.add(d.img)
+  }
+
+  drawLine() {
+    this.edges.forEach((d) => {
+      let lineGroup = new zrender.Group({})
+      lineGroup.name = 'lineGroup'
+      lineGroup.value = d
+      var p1 = this.nodes[d.from]
+      var p2 = this.nodes[d.to]
+
+      if (d.count) {
+        d.style = zrender.util.merge(d.style || {}, { lineWidth: this.atomLineWidth * d.count })
+      }
+
+      let linearGradient = new zrender.LinearGradient(
+        p1.x,
+        p1.y,
+        p2.x,
+        p2.y,
+        [
+          { offset: 0, color: '#e74c3c' },
+          { offset: 1, color: '#2ecc71' },
+        ],
+        true
+      )
+
+      d.style = zrender.util.merge(d.style || {}, { stroke: linearGradient })
+
+      var style = zrender.util.merge(d.style || {}, this.option.edges.style)
+
+      var shape = this.getTwoNodeCenterLine(p1, p2)
+      // 提前计算，以得到shape的angle属性
+      var nodeTo = this.nodes[d.to]
+      var points = this.getPolygonPoints(shape, nodeTo.distance || this.option.edges.arrow.distance)
+      style.textRotation = shape.angle + Math.PI / 2
+      d.line = new zrender.Line({
+        shape: shape,
+        style: style,
+        z: this.Z_line++,
+      })
+      lineGroup.add(d.line)
+      var style = zrender.util.merge(d.arrowStyle || {}, this.option.edges.arrow.style)
+      d.arrow = new zrender.Polygon({
+        shape: {
+          points: points,
+        },
+        style: style,
+        z: this.Z_arrow++,
+      })
+      lineGroup.add(d.arrow)
+      this.group.add(lineGroup)
+    })
+  }
+
+  addCustomLayer() {
+    if (this.option.custom && this.option.custom.length > 0) {
+      this.customGroup = new zrender.Group({})
+      this.customGroup.name = 'customGroup'
+      this.customGroup.value = this.option.custom
+      this.customShape = []
+      this.option.custom.forEach((d) => {
+        var option = d.option
+        if (typeof d.option == 'function') {
+          option = d.option(this.nodes, this.edges, this.container)
+        }
+        var shape = new zrender[d.type](option)
+        this.customShape.push(shape)
+        this.group.add(shape)
+      })
+    }
+  }
+
+  bindDrag() {
+    // 拖动过程中更新绘图
     let groupDragging = false,
       _x,
       _y
-    this.zr.on('dragstart', function (e) {
+
+    this.zr.on('dragstart', (e) => {
       if (e.target.name === 'nodeGroup') {
         self._groupDragging = true
         _x = e.offsetX
@@ -138,166 +343,199 @@ class Flow {
       }
     })
 
-    this.zr.on('dragend', function (e) {
+    this.zr.on('dragend', (e) => {
       this._groupDragging = false
     })
-    // TODO:这段代码应该往下移动，让拖动相关的代码放在一起；另外建议封装为函数，不要全部写在一个函数内
-    if (this.option.showRelation) {
-      this.zr.on('click', function (e) {
-        if (e.target) {
-          if (e.target.parent.name === 'nodeGroup') {
-            let id = e.target.parent.value.id
 
-            for (let v of Object.values(self.nodeList)) {
-              v.parent.eachChild(function (el) {
-                el.attr('style', { opacity: 1 })
-              })
-            }
-            for (let v of Object.values(self.edgeList)) {
-              v.parent.eachChild(function (el) {
-                el.attr('style', { opacity: 1 })
-              })
-            }
-
-            let relatedNode = self.position.g.neighbors(id)
-            let relatedEdge = self.position.g.nodeEdges(id)
-            let unrelatedEdges = self.position.g.edges().filter((edge) => !relatedEdge.includes(edge))
-            let unrelatedNodes = self.position.g.nodes().filter((node) => !(relatedNode.includes(node) || node === id))
-            unrelatedNodes.forEach((node) => {
-              self.nodeList[node].parent.eachChild(function (el) {
-                el.attr('style', { opacity: 0.3 })
-              })
-            })
-            unrelatedEdges.forEach((edge) => {
-              self.edgeList[`from__${edge.v}__to__${edge.w}`].parent.eachChild(function (el) {
-                el.attr('style', { opacity: 0.3 })
-              })
-            })
-          }
-        } else {
-          for (let v of Object.values(self.nodeList)) {
-            v.parent.eachChild(function (el) {
-              el.attr('style', { opacity: 1 })
-            })
-          }
-          for (let v of Object.values(self.edgeList)) {
-            v.parent.eachChild(function (el) {
-              el.attr('style', { opacity: 1 })
-            })
-          }
-        }
-      })
-    }
-
-    this.zr.on('drag', function (e) {
-      self.tooltip.style.display = 'none'
+    this.zr.on('drag', (e) => {
+      this.tooltip.style.display = 'none'
       if (!self._groupDragging) {
         return
       }
-      e.target.attr('z', 999)
-      let oldPos = e.target.transformCoordToLocal(_x, _y)
-      let newPos = e.target.transformCoordToLocal(e.offsetX, e.offsetY)
-      let x = e.offsetX
-      let y = e.offsetY
-      //获取偏移的距离
-      let dx = newPos[0] - oldPos[0]
-      let dy = newPos[1] - oldPos[1]
-      _x = x
-      _y = y
-      let key = e.target.value.id
-      let g = self.position.g
 
-      /*
-       *变换坐标位置到 shape 的局部坐标空间
-       *https://ecomfe.github.io/zrender-doc/public/api.html#zrendertransformabletransformcoordtolocalx-y
-       */
-      //通过dagre自带的api找到与该节点对应的边
-      let relatedEdges = g.nodeEdges(key)
-      //计算偏移后每个矩形的四个点的位置
-      for (let [k, v] of Object.entries(nodePoint[key])) {
-        nodePoint[key][k] = [v[0] + dx, v[1] + dy]
+      var id = e.target.value.id
+      if (this.dragLog.indexOf(id) == -1) {
+        this.dragLog.push(id)
       }
-      let arrowSize = self.option.edges.arrowSize
-      relatedEdges.forEach((edge) => {
-        self.updateLine(edge, nodePoint[edge.v], nodePoint[edge.w], arrowSize)
-      })
+      this.updateLine(id, this.nodes[id], e.target.position)
     })
   }
 
-  drawLine(option) {
-    for (const [key, value] of Object.entries(this.position.edgeInfo)) {
-      let lineGroup = new zrender.Group({ name: key })
-      let sourcePoint = util.getCoordinate(this.position.nodeInfo[value.source])
-      let targetPoint = util.getCoordinate(this.position.nodeInfo[value.target])
-      //连线的两点坐标
-      let linePoint = {
-        p1: [this.position.g.node(value.source).x, this.position.g.node(value.source).y],
-        p2: [this.position.g.node(value.target).x, this.position.g.node(value.target).y],
+  dragReset() {
+    this.dragLog.forEach((d) => {
+      this.nodes[d].nodeGroup.position = [0, 0]
+      this.updateLine(d, this.nodes[d], [0, 0])
+    })
+  }
+
+  updateLine(id, node, offset) {
+    this.edges.forEach((d) => {
+      var type = -1 // -1 无关边  0  起点   1  终点
+      var obj = {}
+      if (d.from == id) {
+        type = 0
+        obj = {
+          x1: this.getNodeCenter(node).x + offset[0],
+          y1: this.getNodeCenter(node).y + offset[1],
+        }
+      } else if (d.to == id) {
+        type = 1
+        obj = {
+          x2: this.getNodeCenter(node).x + offset[0],
+          y2: this.getNodeCenter(node).y + offset[1],
+        }
       }
-      //获取交叉点坐标
-      let targetCrossPoint = GetCrossPoint.lineRect(linePoint, targetPoint)
-      let sourceCrossPoint = GetCrossPoint.lineRect(linePoint, sourcePoint)
+      if (type !== -1) {
+        console.log(d)
+        d.line.attr('shape', obj)
+        // 更新箭头
+        var nodeTo = this.nodes[d.to]
+        var points = this.getPolygonPoints(d.line.shape, nodeTo.distance || this.option.edges.arrow.distance)
+        // 如果是渐变色，要更新渐变色的气止坐标
+        if (d.line.style.stroke.colorStops) {
+          d.line.style.stroke.x = d.line.shape.x1
+          d.line.style.stroke.y = d.line.shape.y1
+          d.line.style.stroke.x2 = d.line.shape.x2
+          d.line.style.stroke.y2 = d.line.shape.y2
+        }
+        d.line.attr('style', {
+          textRotation: d.line.shape.angle + Math.PI / 2,
+        })
+        d.arrow.attr('shape', { points: points })
+      }
+    })
+  }
 
-      this.edgeList[key] = new zrender.Polyline({
-        shape: { points: [sourceCrossPoint, targetCrossPoint] },
-        style: {
-          text: value.label,
-          fontSize: option.edges.label.fontSize,
-          textFill: option.edges.label.color,
-          transformText: true,
-          lineWidth: option.edges.lineWidth,
-          stroke: option.edges.stroke,
-          lineDash: option.edges.lineDash ? [10, 5] : 0,
-        },
-      })
+  getPolygonPoints(shape, distance) {
+    var points = []
+    var baseX1 = shape.x1
+    var baseY1 = shape.y1
+    var baseX2 = shape.x2
+    var baseY2 = shape.y2
+    shape.angle = Math.atan2(baseX1 - baseX2, baseY1 - baseY2)
+    var distance = Math.abs(distance(this.formatterAngle(shape.angle)))
+    // 很接近时不显示箭头
+    if (Math.pow(baseX1 - baseX2, 2) + Math.pow(baseY1 - baseY2, 2) < Math.pow(distance, 2)) {
+      distance = 0
+    }
+    var arrowSize = this.option.edges.arrow.size
+    var arrowAngle = this.option.edges.arrow.angle
+    var head = [baseX2 + distance * Math.sin(shape.angle), baseY2 + distance * Math.cos(shape.angle)]
+    points.push(head)
+    points.push([
+      head[0] + arrowSize * Math.sin(shape.angle - arrowAngle),
+      head[1] + arrowSize * Math.cos(shape.angle - arrowAngle),
+    ])
+    points.push([
+      head[0] + arrowSize * Math.sin(shape.angle + arrowAngle),
+      head[1] + arrowSize * Math.cos(shape.angle + arrowAngle),
+    ])
+    return points
+  }
 
-      let arrowSize = this.option.edges.arrowSize
-      let arrowPoint = [
-        [targetCrossPoint[0], targetCrossPoint[1]],
-        [targetCrossPoint[0] + 10 * arrowSize, targetCrossPoint[1] - 6.0 * arrowSize],
-        [targetCrossPoint[0] + 10 * arrowSize, targetCrossPoint[1] + 6.0 * arrowSize],
-      ]
-      let rotation = -Math.atan2(value.points[0][1] - value.points[1][1], value.points[0][0] - value.points[1][0])
-      let arrow = new zrender.Polygon({
-        shape: { points: arrowPoint },
-        style: { fill: option.edges.arrowColor },
-        rotation: rotation,
-        origin: arrowPoint[0],
-        name: `${key}--arrow`,
-      })
-      lineGroup.add(this.edgeList[key])
-      lineGroup.add(arrow)
-      this.dagreGroup.add(lineGroup)
+  formatterAngle(angle) {
+    while (angle < -2 * Math.PI) {
+      angle += 2 * Math.PI
+    }
+    while (angle > 2 * Math.PI) {
+      angle -= 2 * Math.PI
+    }
+    return angle
+  }
+
+  // 获取节点中心点（区分cxcy和xy的）
+  getNodeCenter(node) {
+    // 以左上角定位，需要加一半宽高得到中心点
+    var needAdd = false
+    if (node.type == undefined || node.type == 'Rect') {
+      needAdd = true
+    }
+    var x = (node.shape.shape.cx || node.shape.shape.x) + (needAdd ? node.shape.shape.width / 2 : 0)
+    var y = (node.shape.shape.cy || node.shape.shape.y) + (needAdd ? node.shape.shape.height / 2 : 0)
+    return { x, y }
+  }
+
+  getTwoNodeCenterLine(node1, node2) {
+    var p1 = this.getNodeCenter(node1)
+    var p2 = this.getNodeCenter(node2)
+    return {
+      x1: p1.x,
+      y1: p1.y,
+      x2: p2.x,
+      y2: p2.y,
     }
   }
 
-  updateLine(edge, sourceRect, targetRect, arrowSize) {
-    let thatEdge = this.edgeList[`from__${edge.v}__to__${edge.w}`]
+  // 高亮一个节点
+  hoverNode(id, shapeStyle = {}, imageStyle = {}) {
+    this.zr.addHover(this.nodes[id].shape, shapeStyle)
+    this.nodes[id].img ? this.zr.addHover(this.nodes[id].img, imageStyle) : 1
+    this.nodes[id].customShape &&
+      this.nodes[id].customShape.forEach((d) => {
+        this.zr.addHover(d, {})
+      })
+  }
 
-    let linePoint = { p1: util.getCentralPoint(sourceRect), p2: util.getCentralPoint(targetRect) }
-    let sourceCrossPoint = GetCrossPoint.lineRect(linePoint, sourceRect)
-    let targetCrossPoint = GetCrossPoint.lineRect(linePoint, targetRect)
-    thatEdge.attr('shape', {
-      points: [sourceCrossPoint, targetCrossPoint],
+  // 高亮一条连线  selector里有两个属性 from， to    both 是否都满足，默认fale
+  hoverEdges(selector, lineStyle = {}, arrowStyle = {}) {
+    var from = selector.from || null
+    var to = selector.to || null
+    var both = selector.both || null
+    var nodes = {}
+    this.edges.forEach((d) => {
+      var check = {}
+      if (!from) {
+        check.from = true
+      } else {
+        check.from = from == d.from
+      }
+      if (!to) {
+        check.to = true
+      } else {
+        check.to = to == d.to
+      }
+      var needHighlight = false
+      if (both && check.from && check.to) {
+        needHighlight = true
+      } else if (!both && (check.from || check.to)) {
+        needHighlight = true
+      }
+      if (needHighlight) {
+        nodes[d.from] = true
+        nodes[d.to] = true
+
+        // this.zr.addHover(d.line, lineStyle)
+        d.line.isHover = true
+        d.line.baseStyle = zrender.util.clone(d.line.style)
+        delete d.line.baseStyle.textRotation
+        d.line.attr('style', lineStyle)
+        this.zr.addHover(d.arrow, arrowStyle)
+      } else if (d.line.isHover) {
+        delete d.line.isHover
+        d.line.attr('style', d.line.baseStyle)
+      }
     })
-    //进行判断，如果有交叉点则对箭头进行处理
-    if (targetCrossPoint) {
-      let rotation = -Math.atan2(sourceCrossPoint[1] - targetCrossPoint[1], sourceCrossPoint[0] - targetCrossPoint[0])
+    return nodes
+  }
 
-      let arrowPoint = [
-        [targetCrossPoint[0], targetCrossPoint[1]],
-        [targetCrossPoint[0] + 10 * arrowSize, targetCrossPoint[1] - 6.0 * arrowSize],
-        [targetCrossPoint[0] + 10 * arrowSize, targetCrossPoint[1] + 6.0 * arrowSize],
-      ]
-      let arrow = this.dagreGroup
-        .childOfName(`from__${edge.v}__to__${edge.w}`)
-        .childOfName(`from__${edge.v}__to__${edge.w}--arrow`)
+  // 清除高亮层
+  clearHover() {
+    this.zr.clearHover()
+    this.edges.forEach((d) => {
+      if (d.line.isHover) {
+        delete d.line.isHover
+        d.line.attr('style', d.line.baseStyle)
+      }
+    })
+  }
 
-      arrow.attr('shape', { points: arrowPoint })
-      arrow.attr('rotation', rotation)
-      arrow.attr('origin', targetCrossPoint)
-    }
+  addEventListener(name, cb) {
+    this.eventCallback[name] = cb
+  }
+
+  clear() {
+    this.zr.clear()
   }
 }
 
-export default Flow
+export default HXTopology

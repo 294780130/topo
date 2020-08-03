@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title></title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+      }
+      #main {
+        flex: 1;
+        height: 100%;
+        position: relative;
+      }
+      #main > div {
+        position: absolute;
+        visibility: hidden;
+        top: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .side {
+        width: 240px;
+        height: 100%;
+        border-right: 1px solid #2980b9;
+        text-align: center;
+      }
+      .side > div {
+        margin: 40px 0;
+        font-size: 18px;
+      }
+      .btn {
+        display: block;
+        margin: 20px;
+        padding: 10px 20px;
+        cursor: pointer;
+        color: #3498db;
+        font-size: 16px;
+      }
+      .reset {
+        position: absolute;
+        left: 50px;
+        top: 20px;
+        width: 100px;
+        height: 40px;
+        background-color: #409eff;
+        color: #fff;
+        border: 0px;
+        border-radius: 5px;
+        box-shadow: 2px 5px 5px 0 rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        outline: none;
+      }
+      .reset:active {
+        background-color: #309edd;
+        border: 0px;
+        transform: translateY(2px);
+        box-shadow: 2px 3px 5px 0 rgba(0, 0, 0, 0.5);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="side">
+      <div>集群业务关系可视化</div>
+      <span class="btn" type="1">全局视图</span>
+      <span class="btn" type="2">详细视图</span>
+      <span class="btn" type="3">单点视图</span>
+    </div>
+    <main id="main">
+      <button class="reset" onclick="reset()">重置</button>
+      <div id="box1"></div>
+      <div id="box2">还在制作，请等待</div>
+      <div id="box3"></div>
+    </main>
+    <script src="./dist/HXTopology.js"></script>
+    <script src="./jiqun.js"></script>
+    <!-- <script src="https://s.thsi.cn/js/datav/HXTopology/1.0.0/HXTopology.js"></script>
+    <script src="https://s.thsi.cn/js/datav/HXTopology/testData/jiqun.js"></script> -->
+    <script src="//s.thsi.cn/cb?js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript">
+      let active = 1
+      let size = {
+        1: {
+          width: 1300,
+          height: 1040,
+        },
+        2: {
+          width: 1470,
+          height: 820,
+        },
+        3: {
+          width: 1500,
+          height: 900,
+        },
+      }
+      let flows = []
+
+      $('.btn').on('click', function () {
+        changeShow($(this).attr('type'))
+        active = $(this).attr('type')
+      })
+
+      console.log(data2)
+      calculateLineWidth(data2, data1)
+
+      var flow1 = new HXTopology('box1', data1, option1)
+      flow1.addEventListener('nodeClick', (id, d) => {
+        flow1.clearHover()
+        flow1.hoverNode(id, { fill: '#ff0000' })
+        var nodes = flow1.hoverEdges({ from: id, to: id }, { stroke: 'red' }, { fill: 'red' })
+        for (let id in nodes) {
+          flow1.hoverNode(id, { fill: '#ff0000' })
+        }
+      })
+      flow1.addEventListener('blur', () => {
+        flow1.clearHover()
+      })
+      // fitSize(flow1, 1300, 1040)
+      flows.push(flow1)
+      changeShow(1)
+
+      var flow2 = new HXTopology('box2', data2, option2)
+      flow2.addEventListener('nodeClick', (id, d) => {
+        flow2.clearHover()
+        let nodes = flow2.hoverEdges({ from: id, to: id }, { stroke: 'red' }, { fill: 'red' }, true)
+        for (let id in nodes) {
+          flow2.hoverNode(id, { fill: '#ff0000' })
+        }
+      })
+      flow2.addEventListener('blur', () => {
+        flow2.clearHover()
+      })
+      // fitSize(flow2, 1470, 820)
+      flows.push(flow2)
+
+      var flow3 = new HXTopology('box3', data3, option3)
+      flow3.addEventListener('nodeClick', (id, d) => {
+        flow3.clearHover()
+        var nodes = flow3.hoverEdges({ from: id, to: id }, { stroke: 'red' }, { fill: 'red' }, true)
+        for (let id in nodes) {
+          flow3.hoverNode(id, { fill: '#ff0000' })
+        }
+      })
+      // fitSize(flow3, 1500, 900)
+      flows.push(flow3)
+
+      let sizeKeys = Object.keys(size)
+      console.log(sizeKeys)
+
+      sizeKeys.forEach((d) => {
+        let w = size[d].width
+        let h = size[d].height
+        index = d - 1
+        fitSize(flows[index], w, h)
+      })
+
+      function changeShow(num) {
+        // var code = `var flow${num} = new HXTopology('box${num}', data${num}, option${num})`
+        for (var i = 1; i <= 3; i++) {
+          if (num == i) {
+            $(`#box${i}`).css('visibility', 'visible')
+          } else {
+            $(`#box${i}`).css('visibility', 'hidden')
+          }
+        }
+      }
+
+      // 根据视图范围和容器范围调整可视区域的偏移量和缩放值
+      function fitSize(flow, w, h, domId = 'main') {
+        var W = $(`#${domId}`).width()
+        var H = $(`#${domId}`).height()
+        var view = {
+          maxX: w,
+          maxY: h,
+        }
+        var position = [0, 0]
+        var scale = 1
+        if (view.maxX / view.maxY < W / H) {
+          scale = H / view.maxY
+          position = [(W - scale * view.maxX) / 2, 0]
+        } else {
+          scale = W / view.maxX
+          position = [0, (H - scale * view.maxY) / 2]
+        }
+        flow.group.position = position
+        flow.group.scale = [scale, scale]
+        flow.group.dirty(true)
+      }
+
+      function reset() {
+        flows[active - 1].dragReset()
+        flows[active - 1].clearHover()
+        fitSize(flows[active - 1], size[active].width, size[active].height)
+      }
+
+      // flow.addEventListener('nodeClick', (id, d) => {
+      //   flow.clearHover();
+      //   flow.hoverNode(id, {fill: '#ff0000'})
+      //   // 连线到高两层后会高于图
+      //   // todo 连线绘制起点终点修改
+      //   flow.hoverEdges({from: id, to: id}, {stroke: 'red'}, {fill: 'red'})
+      // })
+
+      //详细数据计算全局数据线条粗细
+
+      function calculateLineWidth(detailData, globalData) {
+        let flowMap = {}
+
+        detailData.edges.forEach((d) => {
+          let fromItem = detailData.nodes[d.from].label_mark
+          let toItem = detailData.nodes[d.to].label_mark
+
+          if (fromItem !== toItem) {
+            if (flowMap[`${fromItem}-${toItem}`]) {
+              flowMap[`${fromItem}-${toItem}`]++
+            } else {
+              flowMap[`${fromItem}-${toItem}`] = 1
+            }
+          }
+        })
+
+        for (let item in flowMap) {
+          let fromTo = item.split('-')
+          globalData.edges.forEach((d) => {
+            if (d.from === fromTo[0] && d.to === fromTo[1]) {
+              d.count = flowMap[item]
+            }
+          })
+        }
+      }
+    </script>
+  </body>
+</html>
