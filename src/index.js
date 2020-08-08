@@ -54,6 +54,7 @@ class HXTopology {
         },
       },
       custom: null,
+      scalePadding: 20
     }
     this.eventCallback = {
       nodeClick: null,
@@ -85,6 +86,7 @@ class HXTopology {
     // 6.可被拖动和缩放
     this.zr.domName = dom
     this.roam = new roam(this.zr, this.group)
+    this.fitSize();
   }
 
   deleteSurplus() {
@@ -527,6 +529,31 @@ class HXTopology {
         d.line.attr('style', d.line.baseStyle)
       }
     })
+  }
+
+  // 自适应缩放
+  fitSize(){
+    var W = this.container.width;
+    var H = this.container.height;
+    var bBox = this.group.getBoundingRect();
+    var pd =  + this.option.scalePadding * 2
+    var scale = 1;
+    if((bBox.width + pd) / (bBox.height + pd) < W / H){
+      // 高撑满
+      scale = H/(bBox.height + pd)
+    }else{
+      // 宽撑满
+      scale = W/(bBox.width + pd)
+    }
+    this.scaleTo((bBox.x + bBox.width/2),(bBox.y + bBox.height/2), scale)
+  }
+
+  scaleTo(x,y,scale){
+    this.group.scale = [scale, scale]
+    this.group.origin = [x,y]
+    // 将缩放中心平移到容器中心
+    this.group.position = [this.container.width/2 - x, this.container.height/2-y]
+    this.group.dirty(true)
   }
 
   addEventListener(name, cb) {
