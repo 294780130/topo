@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>时间监听</title>
+    <link rel="stylesheet" href="../common.css">
+  </head>
+  <body class="center">
+    <main id="chart"></main>
+    <script src="../RelationGraphs.js"></script>
+    <script type="text/javascript">
+      const data = {
+        edges: [
+          { from: 'A', to: 'B' },
+        ],
+        nodes: {
+          A: {
+            x: 100,
+            y: 100,
+          },
+          B:{
+            x: 300,
+            y: 100,
+          },
+        },
+      }
+
+      const option = {}
+      let flow = new RelationGraphs('chart', data, option)
+
+      // 监听画布事件
+      flow.registerAction('canvas', 'clickBlank', (e)=>{
+        console.log('点击了画布的空白区域', e);
+      })
+
+      flow.registerAction('canvas', 'roam', (e)=>{
+        console.log('主动拖动和缩放了画布', e)
+      })
+
+      // 监听节点事件
+      flow.registerAction('node', 'click', (id, g, e)=>{
+        console.log(`鼠标点击节点${id}`, g, e)
+      })
+      flow.registerAction('node', 'mouseDown', (id, g, e)=>{
+        console.log(`鼠标按下节点${id}`, g, e)
+      })
+      flow.registerAction('node', 'drag', (e)=>{
+        console.log(`鼠标拖动节点`, e)
+      })
+      flow.registerAction('node', 'doubleClick', (id, g, e)=>{
+        console.log(`鼠标双击节点${id}`, g, e)
+      })
+      // flow.registerAction('node', 'mouseMove', (e)=>{
+      //   console.log('鼠标在节上移动', e)
+      // })
+      flow.registerAction('node', 'mouseOut', (e)=>{
+        console.log('鼠标移出节点', e)
+      })
+
+      // 监听连线事件
+      flow.registerAction('edge', 'click', (g, e)=>{
+        console.log(`鼠标点击连线`, g, e)
+      })
+      // flow.registerAction('edge', 'mouseMove', (g, e)=>{
+      //   console.log(`鼠标在连线上移动`, g, e)
+      // })
+    </script>
+  </body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>自定义图形</title>
+    <link rel="stylesheet" href="../common.css" />
+  </head>
+  <body class="center">
+    <main id="chart"></main>
+    <script src="../RelationGraphs.js"></script>
+    <script type="text/javascript">
+      const data = {
+        edges: [{ from: 'A', to: 'B' }],
+        nodes: {
+          A: {
+            x: 100,
+            y: 100,
+            style: {
+              text: 'A',
+            },
+          },
+          B: {
+            x: 300,
+            y: 300,
+            style: {
+              text: 'B',
+            },
+          },
+        },
+      }
+
+      const option = {
+        layout: { type: 'custom', option: {} },
+      }
+      let flow = new RelationGraphs('chart', data, option)
+      let customGroup = flow.getCustomGroup()
+      let zrender = flow.getZrender()
+
+      let heart = new zrender.Heart({
+        draggable: true,
+        shape: {
+          cx: 300,
+          cy: 300,
+          width: 100,
+          height: 150,
+        },
+        style: {
+          fill: 'red',
+        },
+        z: -2,
+      })
+      let circle = new zrender.Circle({
+        draggable: true,
+        shape: {
+          cx: 300,
+          cy: 300,
+          r: 20,
+        },
+        style: {
+          fill: 'green',
+        },
+        z: 1,
+      })
+      customGroup.add(heart)
+      customGroup.add(circle)
+      flow.fitSize()
+    </script>
+  </body>
+</html>

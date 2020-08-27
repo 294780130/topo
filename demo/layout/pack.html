@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>包布局</title>
+    <link rel="stylesheet" href="../common.css" />
+  </head>
+  <body class="center">
+    <main id="chart"></main>
+    <script src="//s.thsi.cn/js/datav/lib/d3.v5.min.js"></script>
+    <script src="../RelationGraphs.js"></script>
+    <script type="text/javascript">
+      const data = {
+        name: 'root',
+        children: [
+          {
+            name: 'A',
+            children: [
+              {
+                name: 'A1',
+                children: [
+                  {
+                    name: 'aa',
+                    value: 3,
+                  },
+                  {
+                    name: 'bb',
+                    value: 5,
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            name: 'B',
+            value: 2,
+          },
+        ],
+      }
+
+      const option = {
+        layout: { type: 'pack', option: {} },
+      }
+      let flow = new RelationGraphs('chart', data, option)
+    </script>
+  </body>
+</html>

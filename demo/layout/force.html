@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>力导向布局</title>
+    <link rel="stylesheet" href="../common.css">
+    <style>
+      #tip{
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+      }
+    </style>
+  </head>
+  <body class="center">
+    <main id="chart"></main>
+    <div id="tip">布局中,请等待...</div>
+    <script src="//s.thsi.cn/js/datav/lib/d3.v5.min.js"></script>
+    <script src="../RelationGraphs.js"></script>
+    <script type="text/javascript">
+      const data = {
+        edges: [
+          { from: 'A', to: 'F' },
+          { from: 'B', to: 'F' },
+          { from: 'C', to: 'F' },
+          { from: 'D', to: 'F' },
+          { from: 'E', to: 'F' },
+          { from: 'G', to: 'D' },
+          { from: 'H', to: 'E' },
+        ],
+        nodes: {
+          A: {
+            style:{
+              text: 'A'
+            }
+          },
+          B: {
+            style:{
+              text: 'B'
+            }
+          },
+          C: {
+            style:{
+              text: 'C'
+            }
+          },
+          D: {
+            style:{
+              text: 'D'
+            }
+          },
+          E: {
+            style:{
+              text: 'E'
+            }
+          },
+          F: {
+            style:{
+              text: 'F'
+            }
+          },
+          G: {
+            style:{
+              text: 'G'
+            }
+          },
+          H: {
+            style:{
+              text: 'H'
+            }
+          },
+        },
+      }
+
+      const option = {
+        nodes:{
+          shape:{
+            width: 40,
+            height: 40,
+            r: 20,
+          },
+          distance: function () {
+            return 20
+          },
+        }
+      }
+
+      let nodes = [];
+      let edges = [];
+      let idToIndex = {}
+      for(let key in data.nodes){
+        idToIndex[key] = nodes.length
+        nodes.push({id: key})
+      }
+      data.edges.forEach((d,i)=>{
+        edges.push({"source": idToIndex[d.from], "target": idToIndex[d.to]})
+      })
+      // 计算力导向的位置
+      var forceSimulation = d3.forceSimulation()
+          .force("link", d3.forceLink())
+          .force("charge", d3.forceManyBody())
+          .force("center", d3.forceCenter());;
+      //生成节点数据
+      forceSimulation.nodes(nodes)
+          .on("tick", ticked);
+      //生成边数据
+      forceSimulation.force("link")
+          .links(edges)
+          .distance(function (d) {//每一边的长度
+              return 100;
+          })
+          .strength(0.5)
+      //设置图形的中心位置	
+      forceSimulation.force("center")
+          .x(0)
+          .y(0)
+      forceSimulation.force("charge", d3.forceManyBody().strength(-100))
+      var times = 0;
+      var lastTime = -1;
+      function ticked() {
+        times ++;
+      }
+      var timer = setInterval(()=>{
+        if(lastTime == times){
+          clearInterval(timer)
+          var nodesLayout = forceSimulation.nodes()
+          nodesLayout.forEach(d=>{
+            data.nodes[d.id].x = d.x
+            data.nodes[d.id].y = d.y
+          })
+          document.getElementById('tip').style['display'] = 'none'
+          let flow = new RelationGraphs('chart', data, option)
+        }else{
+          lastTime = times
+        }
+      },100)
+    </script>
+  </body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>矩阵布局</title>
+    <link rel="stylesheet" href="../common.css" />
+  </head>
+  <body class="center">
+    <main id="chart"></main>
+    <script src="../RelationGraphs.js"></script>
+    <script type="text/javascript">
+      const data = {
+        edges: [{ from: 'A', to: 'B' }],
+        nodes: {
+          A: {
+            style: {
+              text: 'A',
+            },
+            position: [1, 1],
+          },
+          B: {
+            style: {
+              text: 'B',
+            },
+            position: [1, 1],
+          },
+          C: {
+            style: {
+              text: 'C',
+            },
+            position: [1, 2],
+          },
+          D: {
+            style: {
+              text: 'D',
+            },
+            position: [1, 2],
+          },
+          E: {
+            style: {
+              text: 'E',
+            },
+            position: [2, 1],
+          },
+          F: {
+            style: {
+              text: 'F',
+            },
+            position: [2, 1],
+          },
+          G: {
+            style: {
+              text: 'G',
+            },
+            position: [2, 1],
+          },
+          H: {
+            style: {
+              text: 'H',
+            },
+            position: [2, 2],
+          },
+          I: {
+            style: {
+              text: 'I',
+            },
+            position: [2, 2],
+          },
+          J: {
+            style: {
+              text: 'J',
+            },
+            position: [2, 1],
+          },
+        },
+      }
+
+      const option = {
+        layout: {
+          type: 'matrix',
+          option: {
+            numPerCol: 2,
+            gap: 20, //节点间距离
+            groupInterval: 100, //组间间距
+            levelInterval: 100, //层间间距
+          },
+        },
+        nodes:{
+          shape:{
+            width: 40,
+            height: 20,
+            r: 5
+          }
+        },
+        edges:{
+          arrowSize: 5
+        }
+      }
+      let flow = new RelationGraphs('chart', data, option)
+    </script>
+  </body>
+</html>

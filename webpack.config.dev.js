@@ -7,10 +7,10 @@ module.exports = {
   entry: './src/index.js',
   output: {
     path: __dirname,
-    filename: './dist/HXTopology.js',
+    filename: './demo/RelationGraphs.js',
     libraryTarget: 'umd',
     libraryExport: 'default',
-    library: 'HXTopology'
+    library: 'RelationGraphs'
   },
   devServer: {
     compress: false,

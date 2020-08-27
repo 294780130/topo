@@ -1,15 +1,17 @@
-import zrender from 'zrender'
+// 画布允许拖动和缩放，参照官方示例
 class Roam{
-  constructor(zr, root, handler){
+  constructor(that, zr, zrender, handler){
     this.zr = zr;
-    this.root = root;
+    this.root = zr.group;
     this.handler = handler;
+    this.zrender = zrender;
+    this.that = that;
     this.roots = [];
     this.rawTransformable = new zrender.Group()
     this.roamTransformable = new zrender.Group()
     this.roamTransformable.add(this.rawTransformable)
     this.moving = false;
-    this.indexExists = this.find(root) 
+    this.indexExists = this.find(this.root) 
     this.init()
   }
   init(){
@@ -36,20 +38,20 @@ class Roam{
 
         e.stop()
 
-        var wheelDelta = e.wheelDelta
-        var absWheelDeltaDelta = Math.abs(wheelDelta)
-        var originX = e.offsetX
-        var originY = e.offsetY
+        let wheelDelta = e.wheelDelta
+        let absWheelDeltaDelta = Math.abs(wheelDelta)
+        let originX = e.offsetX
+        let originY = e.offsetY
 
         // wheelDelta maybe -0 in chrome mac.
         if (wheelDelta === 0) {
           return
         }
 
-        var factor = absWheelDeltaDelta > 3 ? 1.4 : absWheelDeltaDelta > 1 ? 1.2 : 1.1
-        var scaleDelta = wheelDelta > 0 ? factor : 1 / factor
+        let factor = absWheelDeltaDelta > 3 ? 1.4 : absWheelDeltaDelta > 1 ? 1.2 : 1.1
+        let scaleDelta = wheelDelta > 0 ? factor : 1 / factor
 
-        for (var i = 0; i < this.roots.length; i++) {
+        for (let i = 0; i < this.roots.length; i++) {
           this.updateTransform(this.roots[i], [0, 0], [scaleDelta, scaleDelta], [originX, originY])
         }
       })
@@ -62,8 +64,8 @@ class Roam{
         if (!this.moving) {
           return
         }
-        var pointerPos = [e.offsetX, e.offsetY]
-        for (var i = 0; i < this.roots.length; i++) {
+        let pointerPos = [e.offsetX, e.offsetY]
+        for (let i = 0; i < this.roots.length; i++) {
           this.updateTransform(this.roots[i], [pointerPos[0] - this.moving[0], pointerPos[1] - this.moving[1]], [1, 1], [0, 0])
         }
         this.moving = pointerPos
@@ -76,7 +78,7 @@ class Roam{
   }
 
   find(root) {
-    for (var i = 0; i < this.roots.length; i++) {
+    for (let i = 0; i < this.roots.length; i++) {
       if (this.roots[i].root === root) {
         return i
       }
@@ -86,23 +88,23 @@ class Roam{
 
   handleMouseWheel(e) {
     e.stop()
-    var wheelDelta = e.wheelDelta
-    var absWheelDeltaDelta = Math.abs(wheelDelta)
-    var originX = e.offsetX
-    var originY = e.offsetY
+    let wheelDelta = e.wheelDelta
+    let absWheelDeltaDelta = Math.abs(wheelDelta)
+    let originX = e.offsetX
+    let originY = e.offsetY
     // wheelDelta maybe -0 in chrome mac.
     if (wheelDelta === 0) {
       return
     }
-    var factor = absWheelDeltaDelta > 3 ? 1.4 : absWheelDeltaDelta > 1 ? 1.2 : 1.1
-    var scaleDelta = wheelDelta > 0 ? factor : 1 / factor
-    for (var i = 0; i < roots.length; i++) {
+    let factor = absWheelDeltaDelta > 3 ? 1.4 : absWheelDeltaDelta > 1 ? 1.2 : 1.1
+    let scaleDelta = wheelDelta > 0 ? factor : 1 / factor
+    for (let i = 0; i < roots.length; i++) {
       this.updateTransform(roots[i], [0, 0], [scaleDelta, scaleDelta], [originX, originY])
     }
   }
 
   updateTransform(rootRecord, positionDeltas, scaleDeltas, origin) {
-    var root = rootRecord.root
+    let root = rootRecord.root
 
     this.rawTransformable.scale = root.scale.slice()
     this.rawTransformable.position = root.position.slice()
@@ -112,17 +114,20 @@ class Roam{
     this.roamTransformable.scale = scaleDeltas
     this.roamTransformable.origin = origin
     this.roamTransformable.position = positionDeltas
-
     this.roamTransformable.updateTransform()
     this.rawTransformable.updateTransform()
 
-    zrender.matrix.copy(root.transform || (root.transform = []), this.rawTransformable.transform || zrender.matrix.create())
+    this.zrender.matrix.copy(root.transform || (root.transform = []), this.rawTransformable.transform || this.zrender.matrix.create())
 
     this.root.decomposeTransform()
     this.root.dirty(true)
 
-    var handler = rootRecord.handler
+    let handler = rootRecord.handler
     handler && handler(root)
+    // 绑定拖动缩放的事件
+    this.that.action.do('canvas', 'roam', root)
+    // 传递信号，正在调整画布大小和位置
+    this.that.roaming();
   }
 }
 

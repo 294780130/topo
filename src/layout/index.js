@@ -1,60 +1,34 @@
-import dagre from 'dagre'
+import custom from './custom'
+import matrix from './matrix'
+import pack from './pack'
+import cluster from './cluster'
+import dagre from './dagre'
+import tree from './tree'
 
-var layout = {
-    'static': function(nodes, edges, containerSize, option) {
-        for(let key in nodes){
-            let d = nodes[key]
-            d.x == undefined ? d.x = 0 : 1;
-            d.y == undefined ? d.y = 0 : 1;
-            d.cx == undefined ? d.cx = 0 : 1;
-            d.cy == undefined ? d.cy = 0 : 1;
-        }
-        return nodes;
-    },
-    'straight': function(nodes, edges, containerSize, option) {
-        var startX = containerSize.width / 2 - option.nodes.shape.width / 2;
-        var startY = 100;
-        for(let key in nodes){
-            let d = nodes[key]
-            d.x = startX;
-            d.y = startY;
-            startY += 150;
-        }
-        return nodes;
-    },
-    'dagre': function(nodes, edges, containerSize, option) {
-        let g = new dagre.graphlib.Graph()
-        g.setGraph(option.dagre || {})
-        g.setDefaultEdgeLabel(function () {
-            return {}
-        })
-        for(let key in nodes){
-            let width,height;
-            if (nodes[key].type == 'Circle') {
-                width = 2 * nodes[key].shape.r;
-                height = width;
-            }else{
-                width = (nodes[key].shape && nodes[key].shape.width) || option.nodes.shape.width;
-                height = (nodes[key].shape && nodes[key].shape.height) || option.nodes.shape.height
-            }
-            g.setNode(key, { width: width, height: height, ...nodes[key] })
-        }
-        edges.forEach((v) => g.setEdge(v.from, v.to))
+// 校验需要d3的布局算法
+const d3Need = ['pack', 'cluster', 'force', 'tree']
 
-        dagre.layout(g)
-        g.nodes().forEach((nodeId) => {
-            var nodeData = g.node(nodeId)
-            var addOffset = [0,0];
-            if(nodes[nodeId].type == 'Circle'){
-                addOffset = [nodes[nodeId].shape.r,nodes[nodeId].shape.r]
-            }
-            nodes[nodeId].x = nodeData.x+addOffset[0];
-            nodes[nodeId].y = nodeData.y+addOffset[1];
-            nodes[nodeId].cx = nodeData.x+addOffset[0];
-            nodes[nodeId].cy = nodeData.y+addOffset[1];
-        })
-        return nodes;
+let layout = {
+  custom,
+  dagre,
+  matrix,
+  pack,
+  cluster,
+  tree,
+  use: function (name, that, zrender){
+    if(this[name]){
+      // 使用到d3的布局需要以cdn形式引入d3
+      if(d3Need.includes(name)){
+        if(!window.d3){
+          console.error(`使用的布局需要d3.js支持，请在html中引入'//s.thsi.cn/js/datav/lib/d3.v5.min.js'`)
+          return;
+        }
+      }
+      this[name](that, zrender)
+    }else{
+      console.error(`没有找到匹配的布局算法${name}`)
     }
+  }
 }
 
-export {layout}
+export default layout

@@ -1,0 +1,27 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+body{
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#chart{
+    border: 2px solid #3498db;
+}
+
+.full #chart{
+    width: 100%;
+    height: 100%;
+}
+
+.center #chart{
+    width: 800px;
+    height: 600px;
+    
+}

@@ -285,7 +285,7 @@ group 可拖拽的条件：
 
 1. 在创建 group 的时候，传入 {draggable: true}
 ```
-var group = new zrender.Group({
+let group = new zrender.Group({
   draggable: true
 })
 ```

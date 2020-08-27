@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>组件库功能集合</title>
+    <link rel="stylesheet" href="./index.css">
+  </head>
+
+  <body>
+    <h2 class="title">示例集合</h2>
+    <main>
+      <div folder="basic">
+        <h3>基础示例</h3>
+        <a name="base">基础示例</a>
+        <a name="custom">自定义图形</a>
+      </div>
+
+      <div folder="layout">
+        <h3>布局示例</h3>
+        <a name="dagre">层级布局</a>
+        <a name="force">力导向布局</a>
+        <a name="tree">树布局</a>
+        <a name="matrix">矩阵布局</a>
+        <a name="pack">包布局</a>
+        <a name="cluster">簇布局</a>
+      </div>
+      
+      <div folder="more">
+        <h3>更多功能</h3>
+        <a name="waterMark">水印</a>
+        <a name="event">事件支持</a>
+        <a name="hover">高亮节点连线</a>
+        <a name="optimization">海量点性能优化</a>
+      </div>
+    </main>
+
+    <iframe id="iframe" src="" frameborder="0"></iframe>
+
+    <script src="//s.thsi.cn/cb?js/jquery-1.9.1.min.js"></script>
+    <script>
+      $('body').on('click', function(e){
+        e.target.tagName === 'A' && (window.location.href = getUrlByE(e))
+      })
+      $('a').on('mouseenter', function(e){
+        if(e.target.name == 'optimization') return;
+        $('#iframe').css({left: e.clientX + 20 + 'px', top: e.clientY + 20 + 'px'});
+        $('#iframe').attr('src', getUrlByE(e));
+        $('#iframe').fadeIn(500);
+      })
+      $('a').on('mouseleave', function(){
+        $('#iframe').hide();
+        // 清空iframe
+        $('#iframe').contents().find("body").html("");
+      })
+      function getUrlByE(e){
+        var url = `./${e.target.parentNode.getAttribute('folder')}/${e.target.name}.html`
+        return url;
+      }
+    </script>
+  </body>
+</html>

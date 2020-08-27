@@ -5,10 +5,10 @@ module.exports = {
   entry: './src/index.js',
   output: {
     path: path.resolve(__dirname, './dist'),
-    filename: 'HXTopology.js',
+    filename: 'RelationGraphs.js',
     libraryTarget: 'umd',
     libraryExport: 'default',
-    library: 'HXTopology'
+    library: 'RelationGraphs'
   },
   module: {
     rules: [

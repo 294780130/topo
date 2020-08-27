@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>层级布局</title>
+    <link rel="stylesheet" href="../common.css">
+  </head>
+  <body class="center">
+    <main id="chart"></main>
+    <script src="//s.thsi.cn/js/datav/lib/dagre.min.js"></script>
+    <script src="../RelationGraphs.js"></script>
+    <script type="text/javascript">
+      const data = {
+        edges: [
+          { from: 'A', to: 'B' },
+          { from: 'A', to: 'C' },
+          { from: 'A', to: 'D' },
+          { from: 'C', to: 'E' },
+          { from: 'C', to: 'F' },
+        ],
+        nodes: {
+          A: {
+            style: {
+              text: 'A',
+            },
+          },
+          B:{
+            style: {
+              text: 'B',
+            },
+          },
+          C: {
+            style: {
+              text: 'C',
+            },
+          },
+          D:{
+            style: {
+              text: 'D',
+            },
+          },
+          E: {
+            style: {
+              text: 'E',
+            },
+          },
+          F:{
+            style: {
+              text: 'F',
+            },
+          },
+        },
+      }
+
+      const option = {
+        layout: {
+            type: 'dagre',
+            option: {
+
+            }
+        }
+      }
+      let flow = new RelationGraphs('chart', data, option)
+    </script>
+  </body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>高亮节点连线</title>
+    <link rel="stylesheet" href="../common.css">
+  </head>
+  <body class="center">
+    <main id="chart"></main>
+    <script src="../RelationGraphs.js"></script>
+    <script type="text/javascript">
+      const data = {
+        edges: [
+          { from: 'A', to: 'B' },
+          { from: 'A', to: 'C' },
+        ],
+        nodes: {
+          A: {
+            x: 100,
+            y: 100,
+          },
+          B:{
+            x: 300,
+            y: 100,
+          },
+          C:{
+            x: 300,
+            y: 300,
+          },
+          D:{
+            x: 100,
+            y: 300,
+          },
+        },
+      }
+
+      const option = {}
+      let flow = new RelationGraphs('chart', data, option)
+
+      flow.registerAction('canvas', 'clickBlank', (e)=>{
+        // 清除高亮
+        flow.clearHover();
+      })
+
+      // 监听节点点击
+      flow.registerAction('node', 'click', (id, g, e)=>{
+        // 清除高亮
+        flow.clearHover();
+        // 高亮点击的节点
+        flow.hoverNode(id, {
+          fill: 'orange',
+          strokeWidth: 2,
+          stroke: 'red'
+        })
+      })
+
+      // 监听连线点击
+      flow.registerAction('edge', 'click', (g, e)=>{
+        // 清除高亮
+        flow.clearHover();
+        // 高亮点击的连线
+        flow.addHover(g.childOfName('arrow'), {fill: 'red'})
+        flow.addHover(g.childOfName('line'), {stroke: 'red'})
+      })
+    </script>
+  </body>
+</html>

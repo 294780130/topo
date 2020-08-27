@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>簇布局</title>
+    <link rel="stylesheet" href="../common.css" />
+  </head>
+  <body class="center">
+    <main id="chart"></main>
+    <script src="//s.thsi.cn/js/datav/lib/d3.v5.min.js"></script>
+    <script src="../RelationGraphs.js"></script>
+    <script type="text/javascript">
+      const data = {
+        name: 'root',
+        children: [
+          {
+            name: 'A',
+            children: [
+              {
+                name: 'A1',
+                value: 1,
+              },
+              {
+                name: 'A2',
+                value: 2,
+              },
+              {
+                name: 'A3',
+                value: 3,
+              },
+              {
+                name: 'A4',
+                value: 1,
+              },
+            ],
+          },
+          {
+            name: 'B',
+            children: [
+              {
+                name: 'B1',
+                value: 1,
+              },
+              {
+                name: 'B2',
+                value: 2,
+              },
+              {
+                name: 'B3',
+                value: 3,
+              },
+              {
+                name: 'B4',
+                value: 1,
+              },
+              {
+                name: 'B5',
+                value: 4,
+              },
+              {
+                name: 'B6',
+                value: 2,
+              },
+              {
+                name: 'B7',
+                value: 2,
+              },
+              {
+                name: 'B8',
+                value: 5,
+              },
+            ],
+          },
+        ],
+      }
+
+      const option = {
+        layout: { type: 'cluster', option: {} },
+      }
+      let flow = new RelationGraphs('chart', data, option)
+    </script>
+  </body>
+</html>

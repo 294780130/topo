@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>性能优化</title>
+    <link rel="stylesheet" href="../common.css" />
+  </head>
+  <body class="center">
+    <main id="chart"></main>
+    <script src="../RelationGraphs.js"></script>
+    <script type="text/javascript">
+      let data = {
+        edges: [],
+        nodes: {}
+      }
+
+      for(let i = 0; i < 100; i++){
+          for(let j = 0; j < 100; j++){
+              data.nodes[i + '_' + j] = {
+                  x: j * 160,
+                  y: i * 60,
+              }
+          }
+      }
+
+      const option = {
+        nodes:{
+          // 当节点在外面时隐藏显示
+          hideWhenOuter: true,
+          // x，y方向留白值
+          hidePadding: [200,100],
+        }
+      }
+      let flow = new RelationGraphs('chart', data, option)
+
+    </script>
+  </body>
+</html>
